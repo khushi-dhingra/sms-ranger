@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMS Ranger | Master Launch Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Chart Container Styling (Mandatory) */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        /* Card Interactions */
+        .task-card {
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .task-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-color: #38bdf8;
+        }
+
+        /* Phase Colors */
+        .phase-1-border { border-left: 4px solid #64748b; } /* Foundation - Slate */
+        .phase-2-border { border-left: 4px solid #0ea5e9; } /* Authority - Sky */
+        .phase-3-border { border-left: 4px solid #6366f1; } /* Lead Gen - Indigo */
+        .phase-4-border { border-left: 4px solid #8b5cf6; } /* Verticals - Violet */
+
+        /* Animation */
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .modal-enter { animation: modalSlide 0.3s ease-out; }
+        @keyframes modalSlide { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    </style>
+    <!-- Chosen Palette: Slate (Professional Base), Sky (Salesforce Brand Alignment), Indigo/Violet (Action/Verticals) -->
+    <!-- Application Structure Plan:
+         1. Dashboard: High-level metrics and the 'Growth Projection' chart.
+         2. Strategy Map: Visual explanation of the 4 Marketing Phases.
+         3. Master Calendar: The core interactive engine. Filterable by Week (1-8). 
+            - Grid layout for Mon-Fri.
+            - Modal for deep-dive task details (Business + Social).
+         4. Vertical Playbooks: Dedicated section for Phase 4 (Recruitment, Healthcare, Real Estate) specifics.
+         5. Social Mix: Explaining the 'Why' behind the chosen platforms.
+    -->
+    <!-- Visualization & Content Choices:
+         - Growth Chart: Chart.js Line chart to visualize the "Compound Effect" of consistency.
+         - Calendar Grid: Best way to visualize the daily grind without overwhelming the user.
+         - Modal Detail: Essential to keep the main view clean while storing the massive amount of text instructions.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased">
+
+    <!-- Sidebar Navigation (Desktop) / Mobile Menu (Simplified for SPA) -->
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- Sidebar -->
+        <aside class="hidden md:flex flex-col w-64 bg-slate-900 text-white flex-shrink-0">
+            <div class="p-6 border-b border-slate-700">
+                <div class="flex items-center gap-2">
+                    <div class="bg-sky-500 text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold text-lg">R</div>
+                    <h1 class="font-bold text-xl tracking-tight">SMS Ranger</h1>
+                </div>
+                <p class="text-xs text-slate-400 mt-2">Launch Command Center</p>
+            </div>
+            <nav class="flex-1 p-4 space-y-2">
+                <button onclick="switchView('dashboard')" id="nav-dashboard" class="w-full text-left px-4 py-3 rounded-lg bg-slate-800 text-sky-400 font-medium transition-colors">Mission Control</button>
+                <button onclick="switchView('strategy')" id="nav-strategy" class="w-full text-left px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white font-medium transition-colors">Strategy Map</button>
+                <button onclick="switchView('calendar')" id="nav-calendar" class="w-full text-left px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white font-medium transition-colors">Master Calendar</button>
+                <button onclick="switchView('verticals')" id="nav-verticals" class="w-full text-left px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white font-medium transition-colors">Vertical Playbooks</button>
+                <button onclick="switchView('social')" id="nav-social" class="w-full text-left px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white font-medium transition-colors">Social Mix</button>
+            </nav>
+            <div class="p-4 border-t border-slate-700">
+                <div class="text-xs text-slate-500">Amroar Technologies</div>
+                <div class="text-xs text-slate-500">Start Date: March 2, 2026</div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-8">
+            
+            <!-- Mobile Header -->
+            <div class="md:hidden flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-sm">
+                <span class="font-bold text-lg text-slate-900">SMS Ranger Launch</span>
+                <select onchange="switchView(this.value)" class="bg-slate-100 border-none rounded text-sm p-2 font-bold text-slate-700">
+                    <option value="dashboard">Dashboard</option>
+                    <option value="strategy">Strategy</option>
+                    <option value="calendar">Calendar</option>
+                    <option value="verticals">Verticals</option>
+                    <option value="social">Social Mix</option>
+                </select>
+            </div>
+
+            <!-- VIEW: DASHBOARD -->
+            <section id="view-dashboard" class="fade-in space-y-8">
+                <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
+                    <h2 class="text-3xl font-bold text-slate-900 mb-2">Launch Overview</h2>
+                    <p class="text-slate-500 max-w-3xl">
+                        This application synthesizes the entire go-to-market plan for SMS Ranger. 
+                        It moves from foundational setup to vertical domination over an 8-week intensive sprint.
+                        The goal is to shift from "Website Only" to "Lead Generating Brand".
+                    </p>
+                </div>
+
+                <!-- KPI Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
+                        <div class="text-xs font-bold text-slate-400 uppercase tracking-wide">Total Duration</div>
+                        <div class="text-3xl font-bold text-slate-900 mt-2">8 Weeks</div>
+                        <div class="text-sm text-sky-600 mt-1">40 Active Days</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
+                        <div class="text-xs font-bold text-slate-400 uppercase tracking-wide">Primary Channel</div>
+                        <div class="text-3xl font-bold text-slate-900 mt-2">LinkedIn</div>
+                        <div class="text-sm text-green-600 mt-1">+ AppExchange</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
+                        <div class="text-xs font-bold text-slate-400 uppercase tracking-wide">Target Verticals</div>
+                        <div class="text-3xl font-bold text-slate-900 mt-2">3</div>
+                        <div class="text-sm text-violet-600 mt-1">Recruit, Health, Real Estate</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
+                        <div class="text-xs font-bold text-slate-400 uppercase tracking-wide">Content Pieces</div>
+                        <div class="text-3xl font-bold text-slate-900 mt-2">40+</div>
+                        <div class="text-sm text-orange-600 mt-1">Blogs, Reels, PDFs</div>
+                    </div>
+                </div>
+
+                <!-- Growth Chart -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4">Projected Brand Authority vs. Lead Flow</h3>
+                    <p class="text-sm text-slate-500 mb-6">
+                        The first 4 weeks build the "engine" (Authority). Lead generation typically lags behind content by about 4 weeks. 
+                        Do not be discouraged by low leads in Week 2. Consistency compounds.
+                    </p>
+                    <div class="chart-container">
+                        <canvas id="growthChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: STRATEGY MAP -->
+            <section id="view-strategy" class="hidden fade-in space-y-6">
+                <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-4">The 4-Phase Battle Plan</h2>
+                    <p class="text-slate-600">
+                        We don't do everything at once. We build layer by layer. Understand the focus of each phase before executing the daily tasks.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Phase 1 -->
+                    <div class="bg-slate-50 p-6 rounded-xl border-l-4 border-slate-600 shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-xl font-bold text-slate-800">Phase 1: Foundation</h3>
+                            <span class="bg-slate-200 text-slate-700 text-xs font-bold px-2 py-1 rounded">Weeks 1-2</span>
+                        </div>
+                        <p class="text-slate-600 mt-3 text-sm">
+                            <strong>Goal:</strong> Look Professional & Trustworthy.
+                        </p>
+                        <ul class="mt-4 space-y-2 text-sm text-slate-700">
+                            <li>• AppExchange Listing (Critical)</li>
+                            <li>• LinkedIn Profile Sync</li>
+                            <li>• SEO Keyword Mapping</li>
+                            <li>• <strong>Social Focus:</strong> Introducing the Brand & Team</li>
+                        </ul>
+                    </div>
+
+                    <!-- Phase 2 -->
+                    <div class="bg-sky-50 p-6 rounded-xl border-l-4 border-sky-500 shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-xl font-bold text-slate-800">Phase 2: Authority</h3>
+                            <span class="bg-sky-200 text-sky-800 text-xs font-bold px-2 py-1 rounded">Weeks 3-4</span>
+                        </div>
+                        <p class="text-slate-600 mt-3 text-sm">
+                            <strong>Goal:</strong> Prove we are experts, not just a tool.
+                        </p>
+                        <ul class="mt-4 space-y-2 text-sm text-slate-700">
+                            <li>• Technical Blogs (Flow, Apex)</li>
+                            <li>• Competitor Comparison (Us vs Them)</li>
+                            <li>• Community Engagement (Reddit/Trailhead)</li>
+                            <li>• <strong>Social Focus:</strong> Educational Carousels & Demos</li>
+                        </ul>
+                    </div>
+
+                    <!-- Phase 3 -->
+                    <div class="bg-indigo-50 p-6 rounded-xl border-l-4 border-indigo-500 shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-xl font-bold text-slate-800">Phase 3: Lead Gen</h3>
+                            <span class="bg-indigo-200 text-indigo-800 text-xs font-bold px-2 py-1 rounded">Weeks 4-8 (Ongoing)</span>
+                        </div>
+                        <p class="text-slate-600 mt-3 text-sm">
+                            <strong>Goal:</strong> Capture Emails & Schedule Demos.
+                        </p>
+                        <ul class="mt-4 space-y-2 text-sm text-slate-700">
+                            <li>• Lead Magnets (PDF Guides)</li>
+                            <li>• Partner Outreach (SIs)</li>
+                            <li>• Webinars & Live Events</li>
+                            <li>• <strong>Social Focus:</strong> Social Proof & Case Studies</li>
+                        </ul>
+                    </div>
+
+                    <!-- Phase 4 -->
+                    <div class="bg-violet-50 p-6 rounded-xl border-l-4 border-violet-500 shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-xl font-bold text-slate-800">Phase 4: Vertical Attack</h3>
+                            <span class="bg-violet-200 text-violet-800 text-xs font-bold px-2 py-1 rounded">Weeks 5-7</span>
+                        </div>
+                        <p class="text-slate-600 mt-3 text-sm">
+                            <strong>Goal:</strong> Dominate specific niches.
+                        </p>
+                        <ul class="mt-4 space-y-2 text-sm text-slate-700">
+                            <li>• Recruitment Playbook</li>
+                            <li>• Healthcare Playbook (HIPAA)</li>
+                            <li>• Real Estate Playbook (Speed)</li>
+                            <li>• <strong>Social Focus:</strong> Niche Pain-Point Reels</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: MASTER CALENDAR -->
+            <section id="view-calendar" class="hidden fade-in space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">Execution Calendar</h2>
+                        <p class="text-slate-500 text-sm">Select a week to see daily tasks.</p>
+                    </div>
+                    <div class="mt-4 md:mt-0">
+                        <select id="week-selector" onchange="renderCalendar(this.value)" class="bg-slate-100 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-sky-500 focus:border-sky-500 block w-full p-2.5 font-bold">
+                            <option value="1">Week 1: Foundations (Mar 2-6)</option>
+                            <option value="2">Week 2: Authority (Mar 9-13)</option>
+                            <option value="3">Week 3: Outreach (Mar 16-20)</option>
+                            <option value="4">Week 4: Lead Gen (Mar 23-27)</option>
+                            <option value="5">Week 5: Recruitment (Mar 30-Apr 3)</option>
+                            <option value="6">Week 6: Healthcare (Apr 6-10)</option>
+                            <option value="7">Week 7: Real Estate (Apr 13-17)</option>
+                            <option value="8">Week 8: Scaling (Apr 20-24)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Calendar Grid Container -->
+                <div id="calendar-grid" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <!-- Javascript will populate this -->
+                </div>
+            </section>
+
+            <!-- VIEW: VERTICALS -->
+            <section id="view-verticals" class="hidden fade-in space-y-8">
+                <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-4">Phase 4: Vertical Playbooks</h2>
+                    <p class="text-slate-600">
+                        Generic marketing is hard. Specific marketing is profitable. In Weeks 5-7, we stop selling "SMS" and start selling "Solutions".
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Recruitment -->
+                    <div class="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                        <div class="bg-violet-100 p-4 border-b border-violet-200">
+                            <div class="text-2xl mb-2">🤝</div>
+                            <h3 class="font-bold text-violet-900">Recruitment & Staffing</h3>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase">The Hook</h4>
+                                <p class="text-sm font-medium text-slate-800">"Stop getting ghosted by candidates."</p>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase">The Use Case</h4>
+                                <p class="text-sm text-slate-600">Automated interview reminders sent via SMS from Salesforce when status changes to 'Interview Scheduled'.</p>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase">Target Audience</h4>
+                                <p class="text-sm text-slate-600">HR Directors, Staffing Agency Owners.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Healthcare -->
+                    <div class="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                        <div class="bg-emerald-100 p-4 border-b border-emerald-200">
+                            <div class="text-2xl mb-2">🏥</div>
+                            <h3 class="font-bold text-emerald-900">Healthcare & Clinics</h3>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase">The Hook</h4>
+                                <p class="text-sm font-medium text-slate-800">"Reduce No-Shows by 40% while staying HIPAA Compliant."</p>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase">The Use Case</h4>
+                                <p class="text-sm text-slate-600">Secure appointment reminders. Unlike standard SMS, we emphasize data privacy/security.</p>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase">Target Audience</h4>
+                                <p class="text-sm text-slate-600">Clinic Admins, Medical Practice Managers.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Real Estate -->
+                    <div class="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                        <div class="bg-orange-100 p-4 border-b border-orange-200">
+                            <div class="text-2xl mb-2">🏘️</div>
+                            <h3 class="font-bold text-orange-900">Real Estate</h3>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase">The Hook</h4>
+                                <p class="text-sm font-medium text-slate-800">"Speed to Lead. Text them while they are on your website."</p>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase">The Use Case</h4>
+                                <p class="text-sm text-slate-600">Instant brochure delivery via SMS when a lead fills a web form. Booking site visits instantly.</p>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-400 uppercase">Target Audience</h4>
+                                <p class="text-sm text-slate-600">Sales Directors at Developers (DLF, Godrej types).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: SOCIAL MIX -->
+            <section id="view-social" class="hidden fade-in space-y-8">
+                <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-4">The Social Media Ecosystem</h2>
+                    <p class="text-slate-600">
+                        Not all platforms are equal. Here is where you should spend your energy.
+                    </p>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- LinkedIn -->
+                    <div class="flex items-start gap-4 bg-white p-6 rounded-xl border border-slate-200">
+                        <div class="bg-blue-600 text-white w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl flex-shrink-0">in</div>
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-lg">LinkedIn (Primary - 60% Effort)</h3>
+                            <p class="text-sm text-slate-600 mt-1">Where the decision makers live. Use for text posts, PDF Carousels, and networking with SIs.</p>
+                        </div>
+                    </div>
+
+                    <!-- YouTube -->
+                    <div class="flex items-start gap-4 bg-white p-6 rounded-xl border border-slate-200">
+                        <div class="bg-red-600 text-white w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl flex-shrink-0">YT</div>
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-lg">YouTube (Demos - 20% Effort)</h3>
+                            <p class="text-sm text-slate-600 mt-1">Host your demos and "How-To" guides here. Embed these videos on your website and LinkedIn.</p>
+                        </div>
+                    </div>
+
+                    <!-- Instagram -->
+                    <div class="flex items-start gap-4 bg-white p-6 rounded-xl border border-slate-200">
+                        <div class="bg-gradient-to-tr from-yellow-400 to-purple-600 text-white w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl flex-shrink-0">IG</div>
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-lg">Instagram (Culture - 10% Effort)</h3>
+                            <p class="text-sm text-slate-600 mt-1">Show the human side. Reels about the startup journey, team photos, and quick visual tips. Builds empathy.</p>
+                        </div>
+                    </div>
+
+                     <!-- X / Twitter -->
+                     <div class="flex items-start gap-4 bg-white p-6 rounded-xl border border-slate-200">
+                        <div class="bg-black text-white w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl flex-shrink-0">X</div>
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-lg">X / Twitter (Trends - 10% Effort)</h3>
+                            <p class="text-sm text-slate-600 mt-1">Engage in real-time conversations about Salesforce events (Dreamforce, World Tour). Tag influencers.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Task Detail Modal -->
+    <div id="task-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden modal-enter max-h-[90vh] flex flex-col">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <div>
+                    <div class="text-xs font-bold uppercase text-slate-500 tracking-wider mb-1" id="modal-date">MON MAR 2</div>
+                    <h2 class="text-2xl font-bold text-slate-900" id="modal-title">Task Title</h2>
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 bg-white rounded-full p-2 hover:bg-slate-100 transition">
+                    <span class="text-2xl font-bold">✕</span>
+                </button>
+            </div>
+            
+            <div class="p-8 overflow-y-auto space-y-8">
+                <!-- Business Task Section -->
+                <div class="flex gap-4">
+                    <div class="flex-shrink-0 mt-1">
+                        <div class="w-8 h-8 bg-sky-100 text-sky-600 rounded-lg flex items-center justify-center font-bold">Biz</div>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900 mb-2">The Business Objective</h3>
+                        <p class="text-slate-700 text-sm leading-relaxed" id="modal-what">What description goes here.</p>
+                        <div class="mt-3 bg-slate-50 p-4 rounded-lg border border-slate-100">
+                            <span class="text-xs font-bold text-slate-400 uppercase">How to execute</span>
+                            <p class="text-slate-700 text-sm mt-1 font-medium" id="modal-how">How instructions.</p>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-2 italic" id="modal-why">Why justification.</p>
+                    </div>
+                </div>
+
+                <!-- Social Task Section -->
+                <div class="flex gap-4 pt-6 border-t border-slate-100">
+                    <div class="flex-shrink-0 mt-1">
+                        <div class="w-8 h-8 bg-pink-100 text-pink-600 rounded-lg flex items-center justify-center font-bold">Soc</div>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900 mb-2">Social Media Action</h3>
+                        <div class="grid grid-cols-2 gap-4 mb-3">
+                            <div class="bg-slate-50 p-2 rounded border border-slate-100">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase block">Platform</span>
+                                <span class="text-sm font-bold text-slate-800" id="modal-platform">LinkedIn</span>
+                            </div>
+                            <div class="bg-slate-50 p-2 rounded border border-slate-100">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase block">Tool</span>
+                                <span class="text-sm font-bold text-slate-800" id="modal-tool">Canva</span>
+                            </div>
+                        </div>
+                        <p class="text-slate-700 text-sm leading-relaxed font-medium" id="modal-social">Social task detail.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+                <button onclick="closeModal()" class="px-6 py-2 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 transition">Close Mission</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DATA & LOGIC -->
+    <script>
+        // --- 40 DAYS OF DATA ---
+        const calendarData = [
+            // WEEK 1: Foundations
+            { day: "Mon", date: "Mar 2", title: "Brand Profile Audit", phase: 1, what: "Update Amroar & Personal profiles. Add 'SMS Ranger' to Experience.", how: "Banner: 'Native Salesforce SMS'. Link: Website.", why: "First impressions matter.", social: "Carousel: Intro to SMS Ranger.", platform: "LinkedIn", tool: "Canva" },
+            { day: "Tue", date: "Mar 3", title: "AppExchange Assets", phase: 1, what: "Prep 5 UI screenshots & 100-word SEO description.", how: "Keywords: Native, Flow, No-Code.", why: "Listing quality determines install rate.", social: "Reel: UI Sneak Peek.", platform: "LinkedIn/IG", tool: "Lightshot" },
+            { day: "Wed", date: "Mar 4", title: "SEO Keyword Map", phase: 1, what: "List 10 'How-To' keywords for Salesforce SMS.", how: "Target low competition (e.g., 'Flow SMS India').", why: "Capture search intent.", social: "Tweet Thread: 5 SEO terms we target.", platform: "X", tool: "Keyword Planner" },
+            { day: "Thu", date: "Mar 5", title: "Directory Listings", phase: 1, what: "Submit to G2, Capterra, Google Business.", how: "Use the AppExchange blurb.", why: "Backlinks and trust.", social: "Post: We are live on G2!", platform: "LinkedIn", tool: "Web" },
+            { day: "Fri", date: "Mar 6", title: "Founder Vision", phase: 1, what: "Record video: Why we built Ranger.", how: "Selfie mode. Be authentic.", why: "Human connection.", social: "Reel: The 'Why' Story.", platform: "IG/LinkedIn", tool: "Phone" },
+            
+            // WEEK 2: Authority
+            { day: "Mon", date: "Mar 9", title: "Tech Blog #1", phase: 2, what: "Write 'SMS from Salesforce Flow Guide'.", how: "Step-by-step with screenshots.", why: "Help Admins solve problems.", social: "Carousel: 3 Flow Hacks.", platform: "LinkedIn", tool: "WordPress" },
+            { day: "Tue", date: "Mar 10", title: "Competitor Matrix", phase: 2, what: "Create internal battlecard vs SMS Magic.", how: "Focus on Price & UI simplicity.", why: "Know your enemy.", social: "Reel: Complexity Kills.", platform: "IG", tool: "Canva" },
+            { day: "Wed", date: "Mar 11", title: "Community Engage", phase: 2, what: "Comment on 5 Reddit/Trailhead posts.", how: "Provide value, don't sell.", why: "Build rep.", social: "Poll: Hardest part of SMS?", platform: "LinkedIn", tool: "Reddit" },
+            { day: "Thu", date: "Mar 12", title: "Demo Video", phase: 2, what: "Record 2-min 'Reading Room' demo.", how: "Use Loom. Fast pace.", why: "Show the product magic.", social: "Video: Sentiment Analysis.", platform: "YouTube", tool: "Loom" },
+            { day: "Fri", date: "Mar 13", title: "Team Story", phase: 2, what: "Photo of Amroar team working.", how: "Candid shot.", why: "Corporate stability proof.", social: "Post: Meet the Builders.", platform: "LinkedIn", tool: "Phone" },
+
+            // WEEK 3: Outreach
+            { day: "Mon", date: "Mar 16", title: "SI Partner List", phase: 3, what: "Identify 20 boutique SIs in India.", how: "Sales Nav search.", why: "Partners scale sales.", social: "Post: Partner Program Teaser.", platform: "LinkedIn", tool: "Sales Nav" },
+            { day: "Tue", date: "Mar 17", title: "Lead Magnet", phase: 3, what: "Create 'Messaging Best Practices' PDF.", how: "Gate it for emails.", why: "Build email list.", social: "Carousel: PDF Preview.", platform: "LinkedIn", tool: "Canva" },
+            { day: "Wed", date: "Mar 18", title: "Review Campaign", phase: 3, what: "Email 5 clients for AE Reviews.", how: "Offer incentives.", why: "Social proof.", social: "Reel: Client Win Story.", platform: "IG", tool: "Email" },
+            { day: "Thu", date: "Mar 19", title: "Webinar Prep", phase: 3, what: "Setup Landing Page for Webinar.", how: "Topic: Zero to SMS.", why: "High intent leads.", social: "Video: Webinar Invite.", platform: "LinkedIn", tool: "Zoom" },
+            { day: "Fri", date: "Mar 20", title: "Dev Docs", phase: 3, what: "Publish API/Dev documentation.", how: "Make it public.", why: "Devs read docs first.", social: "Post: For the Developers.", platform: "X", tool: "GitBook" },
+
+            // WEEK 4: Lead Gen
+            { day: "Mon", date: "Mar 23", title: "Demo Sprint", phase: 3, what: "DM leads who liked posts.", how: "Personal invite to demo.", why: "Convert interest.", social: "Carousel: Case Study 1.", platform: "LinkedIn", tool: "DM" },
+            { day: "Tue", date: "Mar 24", title: "ROI Blog", phase: 3, what: "Write 'ROI of SMS vs Calls'.", how: "Use charts/data.", why: "Logic for buyers.", social: "Reel: Save 20hrs/week.", platform: "IG", tool: "Blog" },
+            { day: "Wed", date: "Mar 25", title: "Pricing Reveal", phase: 3, what: "Update pricing page.", how: "Transparent tiers.", why: "Remove friction.", social: "Post: No Hidden Fees.", platform: "LinkedIn", tool: "Web" },
+            { day: "Thu", date: "Mar 26", title: "SI Outreach", phase: 3, what: "Email the 20 SIs from Week 3.", how: "Offer 20% comms.", why: "Activate channel.", social: "Video: Partner Portal.", platform: "LinkedIn", tool: "Email" },
+            { day: "Fri", date: "Mar 27", title: "Month Recap", phase: 3, what: "Review metrics.", how: "Check installs/traffic.", why: "Adjust strategy.", social: "Carousel: March Highlights.", platform: "IG", tool: "Analytics" },
+
+            // WEEK 5: Recruitment Vertical
+            { day: "Mon", date: "Mar 30", title: "Recruit Playbook", phase: 4, what: "Launch Recruitment Guide.", how: "Focus on 'Ghosting'.", why: "Niche attack.", social: "Carousel: Stop Ghosting.", platform: "LinkedIn", tool: "PDF" },
+            { day: "Tue", date: "Mar 31", title: "HR Outreach", phase: 4, what: "Connect with 10 HR Directors.", how: "Personalized note.", why: "Direct sales.", social: "Reel: Interview Reminders.", platform: "IG", tool: "Sales Nav" },
+            { day: "Wed", date: "Apr 1", title: "Staffing Case", phase: 4, what: "Write generic staffing use case.", how: "Problem/Solution format.", why: "Proof of concept.", social: "Post: Staffing ROI.", platform: "LinkedIn", tool: "Blog" },
+            { day: "Thu", date: "Apr 2", title: "ATS Post", phase: 4, what: "Explain ATS integration.", how: "Technical angle.", why: "Tech validation.", social: "Video: Salesforce as ATS.", platform: "YouTube", tool: "Loom" },
+            { day: "Fri", date: "Apr 3", title: "Recruit Q&A", phase: 4, what: "Host AMA for Recruiters.", how: "LinkedIn Audio.", why: "Engagement.", social: "Post: Join Live.", platform: "LinkedIn", tool: "Audio" },
+
+            // WEEK 6: Healthcare Vertical
+            { day: "Mon", date: "Apr 6", title: "Health Playbook", phase: 4, what: "Launch Healthcare Guide.", how: "Focus on HIPAA.", why: "Compliance trust.", social: "Carousel: HIPAA SMS.", platform: "LinkedIn", tool: "PDF" },
+            { day: "Tue", date: "Apr 7", title: "Clinic Outreach", phase: 4, what: "Message Clinic Managers.", how: "Focus on No-Shows.", why: "Solve pain point.", social: "Reel: No-Show Math.", platform: "IG", tool: "Sales Nav" },
+            { day: "Wed", date: "Apr 8", title: "Security Deep Dive", phase: 4, what: "Blog on Data Privacy.", how: "Technical security specs.", why: "Remove fear.", social: "Post: Your Data is Safe.", platform: "LinkedIn", tool: "Blog" },
+            { day: "Thu", date: "Apr 9", title: "Patient Journey", phase: 4, what: "Map patient SMS flow.", how: "Visual diagram.", why: "Clarity.", social: "Video: Patient Exp.", platform: "YouTube", tool: "Canvas" },
+            { day: "Fri", date: "Apr 10", title: "Health ROI", phase: 4, what: "Calc lost revenue from missed apts.", how: "Excel sheet.", why: "Financial logic.", social: "Carousel: Clinic Savings.", platform: "LinkedIn", tool: "Excel" },
+
+            // WEEK 7: Real Estate Vertical
+            { day: "Mon", date: "Apr 13", title: "Prop Playbook", phase: 4, what: "Launch Real Estate Guide.", how: "Focus on Speed.", why: "Lead decay.", social: "Carousel: Speed to Lead.", platform: "LinkedIn", tool: "PDF" },
+            { day: "Tue", date: "Apr 14", title: "Developer Outreach", phase: 4, what: "Contact Sales Heads at DLF/Godrej.", how: "Focus on site visits.", why: "High volume.", social: "Reel: Instant Brochures.", platform: "IG", tool: "Sales Nav" },
+            { day: "Wed", date: "Apr 15", title: "PropTech Post", phase: 4, what: "Post on PropTech trends.", how: "Tag industry leaders.", why: "Visibility.", social: "Post: Future of PropSales.", platform: "LinkedIn", tool: "Web" },
+            { day: "Thu", date: "Apr 16", title: "Site Visit Demo", phase: 4, what: "Video of booking visit via SMS.", how: "Show phone screen.", why: "Visual proof.", social: "Video: Site Visit Flow.", platform: "YouTube", tool: "Phone" },
+            { day: "Fri", date: "Apr 17", title: "Broker Tips", phase: 4, what: "5 Tips for Brokers.", how: "Value add.", why: "Goodwill.", social: "Carousel: Broker Hacks.", platform: "LinkedIn", tool: "Canva" },
+
+            // WEEK 8: Scaling
+            { day: "Mon", date: "Apr 20", title: "ROI Calculator", phase: 3, what: "Launch Web Calculator.", how: "JS Widget on site.", why: "Lead magnet.", social: "Reel: Calculate Savings.", platform: "IG", tool: "Code" },
+            { day: "Tue", date: "Apr 21", title: "Referral Program", phase: 3, what: "Launch official referral links.", how: "Email users.", why: "Viral loop.", social: "Post: Earn with us.", platform: "LinkedIn", tool: "Email" },
+            { day: "Wed", date: "Apr 22", title: "Feature Push", phase: 3, what: "Submit for AE Feature.", how: "Contact SF manager.", why: "Free traffic.", social: "Carousel: Top Rated App.", platform: "LinkedIn", tool: "Web" },
+            { day: "Thu", date: "Apr 23", title: "Live Webinar", phase: 3, what: "Host the 'Zero to SMS' event.", how: "Zoom/YouTube.", why: "Closing leads.", social: "Video: Live Now.", platform: "All", tool: "Zoom" },
+            { day: "Fri", date: "Apr 24", title: "Wrap Up", phase: 3, what: "Team Celebration.", how: "Share results.", why: "Morale.", social: "Carousel: 8 Week Journey.", platform: "LinkedIn", tool: "Phone" }
+        ];
+
+        // --- NAVIGATION LOGIC ---
+        function switchView(viewId) {
+            // Hide all views
+            ['dashboard', 'strategy', 'calendar', 'verticals', 'social'].forEach(id => {
+                document.getElementById(`view-${id}`).classList.add('hidden');
+                // Update Sidebar style (Desktop)
+                const navBtn = document.getElementById(`nav-${id}`);
+                if(navBtn) {
+                    if (id === viewId) {
+                        navBtn.className = "w-full text-left px-4 py-3 rounded-lg bg-slate-800 text-sky-400 font-medium transition-colors";
+                    } else {
+                        navBtn.className = "w-full text-left px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white font-medium transition-colors";
+                    }
+                }
+            });
+
+            // Show selected view
+            document.getElementById(`view-${viewId}`).classList.remove('hidden');
+
+            // Specific initialization
+            if (viewId === 'dashboard') {
+                renderChart();
+            }
+            if (viewId === 'calendar') {
+                renderCalendar(document.getElementById('week-selector').value);
+            }
+        }
+
+        // --- CALENDAR LOGIC ---
+        function renderCalendar(weekNum) {
+            const container = document.getElementById('calendar-grid');
+            container.innerHTML = '';
+            
+            const startIdx = (weekNum - 1) * 5;
+            const endIdx = startIdx + 5;
+            const weekTasks = calendarData.slice(startIdx, endIdx);
+
+            weekTasks.forEach(task => {
+                const card = document.createElement('div');
+                card.className = `task-card bg-white p-5 rounded-xl border border-slate-200 shadow-sm phase-${task.phase}-border flex flex-col justify-between min-h-[160px]`;
+                card.onclick = () => openModal(task);
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">${task.day} ${task.date}</span>
+                            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-1 rounded font-bold uppercase">P${task.phase}</span>
+                        </div>
+                        <h3 class="font-bold text-slate-900 leading-tight">${task.title}</h3>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-100">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded uppercase">Biz</span>
+                            <span class="text-xs text-slate-600 truncate">${task.tool}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold text-pink-600 bg-pink-50 px-1.5 py-0.5 rounded uppercase">Soc</span>
+                            <span class="text-xs text-slate-600 truncate w-full">${task.platform}</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // --- MODAL LOGIC ---
+        function openModal(task) {
+            document.getElementById('modal-date').innerText = `${task.day.toUpperCase()} ${task.date.toUpperCase()}`;
+            document.getElementById('modal-title').innerText = task.title;
+            document.getElementById('modal-what').innerText = task.what;
+            document.getElementById('modal-how').innerText = task.how;
+            document.getElementById('modal-why').innerText = task.why;
+            document.getElementById('modal-platform').innerText = task.platform;
+            document.getElementById('modal-tool').innerText = task.tool;
+            document.getElementById('modal-social').innerText = task.social;
+            
+            document.getElementById('task-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('task-modal').classList.add('hidden');
+        }
+
+        // --- CHART LOGIC ---
+        let chartInstance = null;
+
+        function renderChart() {
+            if (chartInstance) return; // Only render once
+
+            const ctx = document.getElementById('growthChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4', 'Wk 5', 'Wk 6', 'Wk 7', 'Wk 8'],
+                    datasets: [
+                        {
+                            label: 'Brand Presence (Content Volume)',
+                            data: [10, 25, 40, 55, 70, 85, 95, 100],
+                            borderColor: '#0ea5e9', // Sky 500
+                            backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Lead Flow (Inbound)',
+                            data: [0, 2, 5, 15, 30, 50, 75, 100],
+                            borderColor: '#8b5cf6', // Violet 500
+                            backgroundColor: 'transparent',
+                            borderDash: [5, 5],
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, display: false },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // --- INITIALIZATION ---
+        window.onload = function() {
+            renderChart();
+        };
+
+    </script>
+</body>
+</html>
